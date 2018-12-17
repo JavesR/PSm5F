@@ -128,7 +128,7 @@ function laplace(f::Matrix,fkm::Matrix,dr::Float64,
 end
 
 
-function laplace_r1(f::Matrix,dr::Float64,fkm::Matrix,n0bc::Vector,nLbc::Vector,
+function laplace_r(f::Matrix,dr::Float64,fkm::Matrix,n0bc::Vector,nLbc::Vector,
     ar::StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}})
 
     v = zeros(eltype(f),size(f))
@@ -141,7 +141,7 @@ function laplace_r1(f::Matrix,dr::Float64,fkm::Matrix,n0bc::Vector,nLbc::Vector,
     v[1,:] = n0bc
     v[end,:] = nLbc
 
-    v = tridag(a,b,c,f,nr+1,lmx)
+    v = tridag(a,b,c,f,nr+1,lmx,n0bc,nLbc)
 
     return v
 

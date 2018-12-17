@@ -39,61 +39,64 @@ nLbc = [0.0;0.0]
 visvol = 1.e-4
 vispsi = 1.e-4
 
-dt = 0.001
-tmax = 10
+dt = 0.005
+tmax = 500
 
 
-function timeloop(tmax,dt)
 
-    t = 0.0
-    nt = Int64(tmax/dt)
+function flow(tmax,dt)
 
+    # initialization
     phi = zeros(ComplexF64,(nr+1,lmx))
     psi = zeros(ComplexF64,(nr+1,lmx))
-    
+
     phi[:,2:end] .= 1.e-5 * sin.(π*(0:nr)/nr) .+ 0im
     psi[:,2:end] .= 1.e-5 * sin.(π*(0:nr)/nr) .+ 0im
-    
-    vol = laplace_r(phi,dr,fkm,n0bc,nLbc,ar)
+
+    vol =  laplace(phi,fkm,dr,ar)
     cur = -laplace(psi,fkm,dr,ar)
 
-    # for i in 1:nt
+    nt = Int64(tmax/dt)
 
-    #     vol,psi = Euler(vol,psi)
-    #     # vol,psi = RK4(vol,psi)
-    #     t = t+dt
-
-    #     if i%1000 == 0
-    #         print("t=$t \n")
-    #         ft = [  real(reshape(vol,(:,1))) imag(reshape(vol,(:,1))) real(reshape(psi,(:,1))) imag(reshape(psi,(:,1))) ]
-    #         np.savetxt("psi$i.dat",ft,fmt="%+16.7e")
-    #     end
-
-    # end
+    timeloop(vol,psi,nt)
 
 end
 
+
+function timeloop(vol,psi,nt)
+
+    t = 0.0
+    for i in 1:nt
+
+        # vol,psi = Euler(vol,psi)
+        vol,psi = RK4(vol,psi)
+
+        t = t+dt
+
+        if i%1000 == 0
+            print("t=$t \n")
+            ft = [  real(reshape(vol,(:,1))) imag(reshape(vol,(:,1))) real(reshape(psi,(:,1))) imag(reshape(psi,(:,1))) ]
+            np.savetxt("psi$i.dat",ft,fmt="%+16.7e")
+        end
+
+    end
+
+
+end
 
 
 function Euler(vol,psi)
 
-    phi = laplace_r(vol,dr,ar,fkm,n0bc,nLbc)
-    cur = -laplace(psi,fkm,ar,dr)
+    phi = laplace_r(vol,dr,fkm,n0bc,nLbc,ar)
+    cur = -laplace(psi,fkm,dr,ar)
     dy_psi = ydiff1(psi,fkm)
 
-    vol1 = vol .+ dt*(fkp.*cur -ϵ*(ss./q+(2.0 .-s).*s ./(ar.*q)).*dy_psi)
-    psi1 = psi .+ dt*(-fkp.*phi)
+    vol1 = vol .+ dt*(fkp.*cur -ϵ*(ss./q+(2.0 .-s).*s ./(ar.*q)).*dy_psi .+ visvol.*laplace(psi,fkm,dr,ar) )
+    psi1 = psi .+ dt*(-fkp.*phi .- vispsi .*cur)
 
     return vol1,psi1
 
 end
-
-
-
-
-
-
-
 
 
 function RK4(vol,psi)
@@ -113,20 +116,20 @@ end
 
 function RHS(vol,psi)
 
-    phi = laplace_r(vol,dr,ar,fkm,n0bc,nLbc)
-    cur = -laplace(psi,fkm,ar,dr)
+    phi = laplace_r(vol,dr,fkm,n0bc,nLbc,ar)
+    cur = -laplace(psi,fkm,dr,ar)
     dy_psi = ydiff1(psi,fkm)
 
-    kvol = fkp.*cur -ϵ*(ss./q+(2.0 .-s).*s ./(ar.*q)).*dy_psi
-    kpsi = -fkp.*phi
+    kvol = fkp.*cur -ϵ*(ss./q+(2.0 .-s).*s ./(ar.*q)).*dy_psi .+ visvol.*laplace(psi,fkm,dr,ar)
+    kpsi = -fkp.*phi .- vispsi .*cur
 
     return kvol,kpsi
 
 end
 
-timeloop(tmax,dt)
+# timeloop()
 
-
+flow(tmax,dt)
 
 
 
