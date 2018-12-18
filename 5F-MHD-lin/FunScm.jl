@@ -1,16 +1,40 @@
 
-function Euler(vol::Matrix,psi::Matrix)
+# function Euler( den::Matrix,
+# 				vol::Matrix,
+# 				val::Matrix,
+# 				psi::Matrix,
+# 				tem::Matrix)
 
-    phi = laplace_r(vol,dr,fkm,n0bc,nLbc,ar)
-    cur = -laplace(psi,fkm,dr,ar)
-    dy_psi = ydiff1(psi,fkm)
+#     phi = laplace_r(vol,dr,fkm,n0bc,nLbc,ar)
+#     cur = -laplace(psi,fkm,dr,ar)
 
-    vol1 = vol .+ dt*(fkp.*cur -ϵ*(ss./q+(2.0 .-s).*s ./(ar.*q)).*dy_psi .+ visvol.*laplace(psi,fkm,dr,ar) )
-    psi1 = psi .+ dt*(-fkp.*phi .- vispsi .*cur) ./β
+#     den1 =den .+ dt.*(den0.*aln.*fkm.*phi
+#             		-den0.*fkp.*val
+#             		+fkp.*cur
+#             		-ϵ*(ss./q+(2.0 .-s).*s ./(ar.*q)).*fkm.*psi 
+#             		+visden.*laplace(den,fkm,dr,ar) )
 
-    return vol1,psi1
+#     vol1 =vol .+ dt.*(-tem0.*aln.*(1.0.+ηi).*fkm.*vol
+#             		+(1 ./den0).*(fkp.*cur-ϵ*(ss./q+(2.0 .-s).*s ./(ar.*q)).*fkm.*psi)
+#             		+visvol.*laplace(vol,fkm,dr,ar) )
+    
+#     val1 =val .+ dt.*(-fkp.*(tem.+(1+τ).*tn0.*den)
+#             		-β.*tem0.*aln.*(1 .+τ .+ηi).*fkm.*psi
+#             		+visval.*laplace(val,fkm,dr,ar) ) 
 
-end
+#     psi1 =psi .+ dt.*(-fkp.*(phi.-τ.*tn0.*den)
+#             		+β.*tem0.*τ.*aln.*fkm.*psi
+#             		+0.029.*τ^0.5.*abs.(fkp).*(val-cur./den0)
+#             		+vispsi.*laplace(psi,fkm,dr,ar) )./β
+
+#     tem1 =tem .+ dt.*( tem0.*aln.*ηi.*fkm.*phi
+#             		-(Γ-1).*tem0.*fkp.*val
+#             		-(Γ-1).*(8 .*tem0/π).^0.5.*abs.(fkp).*tem
+#             		+vistem.*laplace(tem,fkm,dr,ar) )	
+
+#     return den1,vol1,val1,psi1,tem1
+
+# end
 
 
 function MEuler(den::Matrix,
@@ -28,8 +52,8 @@ function MEuler(den::Matrix,
 
     phi = laplace_r(vol,dr,fkm,n0bc,nLbc,ar)
     cur = -laplace(psi,fkm,dr,ar)
-    
-    denrhs =(den0.*aln.*fkm.*phi
+	
+    denrhs =(den0.*aln.*fkm.*phi 
             -den0.*fkp.*val
             +fkp.*cur
             -ϵ*(ss./q+(2.0 .-s).*s ./(ar.*q)).*fkm.*psi )
@@ -42,7 +66,7 @@ function MEuler(den::Matrix,
 
     psirhs =(-fkp.*(phi.-τ.*tn0.*den)
             +β.*tem0.*τ.*aln.*fkm.*psi
-            +0.029.*τ^0.5.*abs.(fkp).*(val-cur./den0) )
+            +0.029.*τ^0.5.*abs.(fkp).*val )
 
     temrhs =(tem0.*aln.*ηi.*fkm.*phi
             -(Γ-1).*tem0.*fkp.*val
@@ -51,7 +75,7 @@ function MEuler(den::Matrix,
     den = pus(den_old,denrhs,0.5*dt,visden,dr,ar,fkm,n0bc,nLbc,1.0)
     vol = pus(vol_old,volrhs,0.5*dt,visvol,dr,ar,fkm,n0bc,nLbc,1.0)
     val = pus(val_old,valrhs,0.5*dt,visval,dr,ar,fkm,n0bc,nLbc,1.0)
-    psi = pus(psi_old,psirhs,0.5*dt,vispsi,dr,ar,fkm,n0bc,nLbc,β)
+    psi = pus(psi_old,psirhs,0.5*dt,vispsi.+0.029.*τ^0.5.*abs.(fkp)./den0,dr,ar,fkm,n0bc,nLbc,β)
     tem = pus(tem_old,temrhs,0.5*dt,vistem,dr,ar,fkm,n0bc,nLbc,1.0)
 
 
@@ -72,7 +96,7 @@ function MEuler(den::Matrix,
 
     psirhs =(-fkp.*(phi.-τ.*tn0.*den)
             +β.*tem0.*τ.*aln.*fkm.*psi
-            +0.029.*τ^0.5.*abs.(fkp).*(val-cur./den0) )
+            +0.029.*τ^0.5.*abs.(fkp).*val )
 
     temrhs =(tem0.*aln.*ηi.*fkm.*phi
             -(Γ-1).*tem0.*fkp.*val
@@ -81,7 +105,7 @@ function MEuler(den::Matrix,
     den = pus(den_old,denrhs,dt,visden,dr,ar,fkm,n0bc,nLbc,1.0)
     vol = pus(vol_old,volrhs,dt,visvol,dr,ar,fkm,n0bc,nLbc,1.0)
     val = pus(val_old,valrhs,dt,visval,dr,ar,fkm,n0bc,nLbc,1.0)
-    psi = pus(psi_old,psirhs,dt,vispsi,dr,ar,fkm,n0bc,nLbc,β)
+    psi = pus(psi_old,psirhs,dt,vispsi.+0.029.*τ^0.5.*abs.(fkp)./den0,dr,ar,fkm,n0bc,nLbc,β)
     tem = pus(tem_old,temrhs,dt,vistem,dr,ar,fkm,n0bc,nLbc,1.0)
 
     return den,vol,val,psi,tem

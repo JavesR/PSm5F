@@ -100,11 +100,17 @@ function center4_2(f::Matrix,dr::Float64)
             d2f[i,l] = ( -f[i+2,l] + 16f[i+1,l] -30f[i,l] + 16f[i-1,l] - f[i-2,l] )/(12dr^2)
         end
 
-        d2f[1,l] = ( 2f[1,l] - 5f[2,l] + 4f[3,l] -f[4,l])/(dr^2)
-        d2f[2,l] = ( f[1,l] - 2f[2,l] + f[3,l] )/(dr^2)
+        # d2f[1,l] = ( 2f[1,l] - 5f[2,l] + 4f[3,l] -f[4,l])/(dr^2)
+        # d2f[2,l] = ( f[1,l] - 2f[2,l] + f[3,l] )/(dr^2)
+        # d2f[end,l] = ( 2f[end,l] - 5f[end-1,l] + 4f[end-2,l] - f[end-3,l] )/(dr^2)
+        # d2f[end-1,l] = ( f[end,l] - 2f[end-1,l] + f[end-2,l] )/(dr^2) 
 
-        d2f[end,l] = ( 2f[end,l] - 5f[end-1,l] + 4f[end-2,l] - f[end-3,l] )/(dr^2)
-        d2f[end-1,l] = ( f[end,l] - 2f[end-1,l] + f[end-2,l] )/(dr^2) 
+        d2f[1,l] = ( 45f[1,l] - 154f[2,l] + 214f[3,l] -156f[4,l] +61f[5,l] -10f[6,l] )/(12dr^2)
+        d2f[2,l] = ( 45f[2,l] - 154f[3,l] + 214f[4,l] -156f[5,l] +61f[6,l] -10f[7,l] )/(12dr^2)
+        d2f[end,l] = ( 45f[end,l] - 154f[end-1,l] + 214f[end-2,l] -156f[end-3,l] +61f[end-4,l] -10f[end-5,l] )/(12dr^2)
+        d2f[end-1,l] = ( 45f[end-1,l] - 154f[end-2,l] + 214f[end-3,l] -156f[end-4,l] +61f[end-5,l] -10f[end-6,l] )/(12dr^2)
+        
+
     end
 
     return d2f
@@ -124,7 +130,7 @@ function laplace(f::Matrix,fkm::Matrix,dr::Float64,
 
     d2f =  rdiff2(f,dr) .+  rdiff1(f,dr) ./ ar 
 
-    return d2f .+ f.*fkm.^2
+    return d2f #.+ f.*fkm.^2
 
 end
 

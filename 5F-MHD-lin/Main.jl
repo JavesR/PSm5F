@@ -44,7 +44,7 @@ q_en = Int64(round(0.8*(nr+1)))
 qmin = findmin( q[q_sn:q_en] )[1]
 qmax = findmax( q[q_sn:q_en] )[1]
 # lmx,lkm,lkn = mode_selection(qmax,qmin,2,1,2,1)  # model 1
-lmx,lkm,lkn = mode_selection(qmax,qmin,90,17)      # model 2
+lmx,lkm,lkn = mode_selection(qmax,qmin,50,17)      # model 2
 fkm,fkn,fkp = MakeFk(q,lkm,lkn,ar)
 
 println(lkm)
@@ -54,17 +54,14 @@ visden = 1.e-7 .* reshape(lkm.^4,(1,:)) .* ones(Float64,nr+1,lmx)
 visvol = 1.e-7 .* reshape(lkm.^4,(1,:)) .* ones(Float64,nr+1,lmx)
 visval = 1.e-7 .* reshape(lkm.^4,(1,:)) .* ones(Float64,nr+1,lmx)
 vistem = 1.e-7 .* reshape(lkm.^4,(1,:)) .* ones(Float64,nr+1,lmx)
-vispsi = 1.e-4 .* ones(Float64,nr+1,lmx)
+vispsi = 4.e-5 .* ones(Float64,nr+1,lmx)
 
 
 dt = 0.001
-tmax = 100
+tmax = 300
 
 n0bc = zeros(ComplexF64,lmx)
 nLbc = zeros(ComplexF64,lmx)
-
-
-
 
 
 function flow(tmax,dt)
@@ -82,6 +79,8 @@ function flow(tmax,dt)
     psi[:,2:end] .= 1.e-5 * sin.(π*(0:nr)/nr) .+ 0im
     tem[:,2:end] .= 1.e-5 * sin.(π*(0:nr)/nr) .+ 0im
 
+
+
     vol =  laplace(phi,fkm,dr,ar)
 
     nt = Int64(tmax/dt)
@@ -95,9 +94,9 @@ function timeloop(den,vol,val,psi,tem,nt)
 
     t = 0.0
 
-    # print("t=$t \n")
-    # ft = [  real(reshape(vol,(:,1))) imag(reshape(vol,(:,1))) real(reshape(psi,(:,1))) imag(reshape(psi,(:,1))) ]
-    # np.savetxt("t$t.dat",ft,fmt="%+16.7e")
+    print("t=$t \n")
+    ft = [  real(reshape(vol,(:,1))) imag(reshape(vol,(:,1))) real(reshape(psi,(:,1))) imag(reshape(psi,(:,1))) ]
+    np.savetxt("t$t.dat",ft,fmt="%+16.7e")
 
     for i in 1:nt
 
@@ -108,9 +107,14 @@ function timeloop(den,vol,val,psi,tem,nt)
         t = t+dt
 
         if i%1000 == 0
+			
+			phi = laplace_r(vol,dr,fkm,n0bc,nLbc,ar)
+			cur = -laplace(psi,fkm,dr,ar)
+
             print("t=$t \n")
-            ft = [  real(reshape(vol,(:,1))) imag(reshape(vol,(:,1))) real(reshape(psi,(:,1))) imag(reshape(psi,(:,1))) ]
+            ft = [  real(reshape(cur,(:,1))) imag(reshape(cur,(:,1))) real(reshape(psi,(:,1))) imag(reshape(psi,(:,1))) ]
             np.savetxt("t$i.dat",ft,fmt="%+16.7e")
+		
         end
 
     end
