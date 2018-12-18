@@ -5,11 +5,15 @@ using BenchmarkTools
 @pyimport matplotlib.pyplot as plt
 
 include("./FunEqm.jl")
-include("./FunDerv.jl")
+include("./FunDev.jl")
+include("./FunScm.jl")
 
 ϵ = 0.25
-β = 0.001
+β = 0.01
+τ = 1.0
+Γ = 5/3
 a_minor = 80.
+
 
 n0 = 0.05
 nL = 1.0
@@ -22,61 +26,91 @@ ar = a_minor*r
 
 
 q = 1.05 .+ 2.0 .* r.^ 2
+den0 = 0.8 .+ 0.2.*exp.(-2 .*r.^2)
+tem0 = 0.35 .+ 0.65.*(1 .-r.^2).^2
+
 s = ar ./ q .* rdiff1(q,dr,nr+1)
 ss = rdiff1(s,dr,nr+1)
 
+ηi = den0 ./tem0 .* rdiff1(tem0,dr,nr+1) ./ rdiff1(den0,dr,nr+1)
 
-qmin = findmin(q)[1]
-qmax = findmax(q)[1]
-lmx,lkm,lkn = mode_selection(qmax,qmin,2,1,2,1)
+aln = a_minor .*rdiff1(den0,dr,nr+1) ./ den0
+tn0 = tem0 ./ den0
+
+
+q_sn = Int64(round(0.2*(nr+1)))
+q_en = Int64(round(0.8*(nr+1)))
+
+qmin = findmin( q[q_sn:q_en] )[1]
+qmax = findmax( q[q_sn:q_en] )[1]
+# lmx,lkm,lkn = mode_selection(qmax,qmin,2,1,2,1)  # model 1
+lmx,lkm,lkn = mode_selection(qmax,qmin,90,17)      # model 2
 fkm,fkn,fkp = MakeFk(q,lkm,lkn,ar)
 
+println(lkm)
+println(lkn)
 
-n0bc = [0.0;0.0]
-nLbc = [0.0;0.0]
+visden = 1.e-7 .* reshape(lkm.^4,(1,:)) .* ones(Float64,nr+1,lmx)
+visvol = 1.e-7 .* reshape(lkm.^4,(1,:)) .* ones(Float64,nr+1,lmx)
+visval = 1.e-7 .* reshape(lkm.^4,(1,:)) .* ones(Float64,nr+1,lmx)
+vistem = 1.e-7 .* reshape(lkm.^4,(1,:)) .* ones(Float64,nr+1,lmx)
+vispsi = 1.e-4 .* ones(Float64,nr+1,lmx)
 
 
-visvol = 1.e-4
-vispsi = 1.e-4
+dt = 0.001
+tmax = 100
 
-dt = 0.005
-tmax = 500
+n0bc = zeros(ComplexF64,lmx)
+nLbc = zeros(ComplexF64,lmx)
+
+
 
 
 
 function flow(tmax,dt)
 
     # initialization
+    den = zeros(ComplexF64,(nr+1,lmx))
     phi = zeros(ComplexF64,(nr+1,lmx))
+    val = zeros(ComplexF64,(nr+1,lmx))
     psi = zeros(ComplexF64,(nr+1,lmx))
+    tem = zeros(ComplexF64,(nr+1,lmx))
 
+    den[:,2:end] .= 1.e-5 * sin.(π*(0:nr)/nr) .+ 0im
     phi[:,2:end] .= 1.e-5 * sin.(π*(0:nr)/nr) .+ 0im
+    val[:,2:end] .= 1.e-5 * sin.(π*(0:nr)/nr) .+ 0im
     psi[:,2:end] .= 1.e-5 * sin.(π*(0:nr)/nr) .+ 0im
+    tem[:,2:end] .= 1.e-5 * sin.(π*(0:nr)/nr) .+ 0im
 
     vol =  laplace(phi,fkm,dr,ar)
-    cur = -laplace(psi,fkm,dr,ar)
 
     nt = Int64(tmax/dt)
 
-    timeloop(vol,psi,nt)
+    timeloop(den,vol,val,psi,tem,nt)
 
 end
 
 
-function timeloop(vol,psi,nt)
+function timeloop(den,vol,val,psi,tem,nt)
 
     t = 0.0
+
+    # print("t=$t \n")
+    # ft = [  real(reshape(vol,(:,1))) imag(reshape(vol,(:,1))) real(reshape(psi,(:,1))) imag(reshape(psi,(:,1))) ]
+    # np.savetxt("t$t.dat",ft,fmt="%+16.7e")
+
     for i in 1:nt
 
         # vol,psi = Euler(vol,psi)
-        vol,psi = RK4(vol,psi)
+        den,vol,val,psi,tem = MEuler(den,vol,val,psi,tem)
+        # den,vol,val,psi,tem= RK4(den,vol,val,psi,tem)
 
         t = t+dt
 
         if i%1000 == 0
             print("t=$t \n")
             ft = [  real(reshape(vol,(:,1))) imag(reshape(vol,(:,1))) real(reshape(psi,(:,1))) imag(reshape(psi,(:,1))) ]
-            np.savetxt("psi$i.dat",ft,fmt="%+16.7e")
+            np.savetxt("t$i.dat",ft,fmt="%+16.7e")
         end
 
     end
@@ -84,50 +118,6 @@ function timeloop(vol,psi,nt)
 
 end
 
-
-function Euler(vol,psi)
-
-    phi = laplace_r(vol,dr,fkm,n0bc,nLbc,ar)
-    cur = -laplace(psi,fkm,dr,ar)
-    dy_psi = ydiff1(psi,fkm)
-
-    vol1 = vol .+ dt*(fkp.*cur -ϵ*(ss./q+(2.0 .-s).*s ./(ar.*q)).*dy_psi .+ visvol.*laplace(psi,fkm,dr,ar) )
-    psi1 = psi .+ dt*(-fkp.*phi .- vispsi .*cur)
-
-    return vol1,psi1
-
-end
-
-
-function RK4(vol,psi)
-
-    k1vol,k1psi = RHS(vol,             psi            )
-    k2vol,k2psi = RHS(vol.+dt*k1vol/2, psi.+dt*k1psi/2)
-    k3vol,k3psi = RHS(vol.+dt*k2vol/2, psi.+dt*k2psi/2)
-    k4vol,k4psi = RHS(vol.+dt*k3vol,   psi.+dt*k3psi  )
-
-    vol1 = vol .+ dt*(k1vol .+2k2vol .+2k3vol .+k4vol)/6
-    psi1 = psi .+ dt*(k1psi .+2k2psi .+2k3psi .+k4psi)/6
-
-    return vol1,psi1
-
-end
-
-
-function RHS(vol,psi)
-
-    phi = laplace_r(vol,dr,fkm,n0bc,nLbc,ar)
-    cur = -laplace(psi,fkm,dr,ar)
-    dy_psi = ydiff1(psi,fkm)
-
-    kvol = fkp.*cur -ϵ*(ss./q+(2.0 .-s).*s ./(ar.*q)).*dy_psi .+ visvol.*laplace(psi,fkm,dr,ar)
-    kpsi = -fkp.*phi .- vispsi .*cur
-
-    return kvol,kpsi
-
-end
-
-# timeloop()
 
 flow(tmax,dt)
 

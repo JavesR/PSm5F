@@ -19,7 +19,8 @@ function MakeFk(q::Vector,lkm::Vector,lkn::Vector ,ar)
 end
 
 
-function mode_selection(qmax,qmin,m_sh,n_sh,m_max,n_max)
+function mode_selection(qmax::Float64,qmin::Float64,m_sh::Int64,n_sh::Int64,
+    m_max::Int64,n_max::Int64)
     
     flagGAM = 0
     lkm = Vector{Int64}(undef,m_max*n_max)

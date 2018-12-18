@@ -65,22 +65,26 @@ function pade_1(f,dr,n)
 
     a = dr/3*ones(Float64,n)
     a[1] = 0.
-    a[end] = 0.
+    a[n] = 0.
     
     b = 4dr/3*ones(Float64,n)
     b[1] = 1.
-    b[end] = 1.
+    b[n] = 1.
     
     c = dr/3*ones(Float64,n)
     c[1] = 0.
-    c[end] = 0.
+    c[n] = 0.
     
     u = zeros(eltype(f),n)
     for i in 2:n-1
         u[i] = f[i+1]-f[i-1]
     end
-    u[1] = (-3f[1]+4f[2]-f[3])/(2dr)
-    u[end] = (f[end-2]-4f[end-1]+3f[end])/(2dr)
+
+    # u[1] = (-3f[1]+4f[2]-f[3])/(2dr)
+    # u[n] = (f[n-2]-4f[n-1]+3f[n])/(2dr)
+
+    u[1] = ( -25f[1] + 48f[2] - 36f[3] + 16f[4] -3f[5] )/(12dr)
+    u[n] = ( -25f[n] + 48f[n-1] - 36f[n-2] + 16f[n-3] -3f[n-4] )/(-12dr)
 
     df = tridag1(a,b,c,u,n)
 
@@ -143,11 +147,16 @@ function center4(f,dr,n)
         df[i] = ( -f[i+2] + 8f[i+1] - 8f[i-1] + f[i-2] )/(12dr)
     end
 
-    df[1] = ( -3f[1] + 4f[2] - f[3] )/(2dr)
-    df[2] = ( -2f[1] - 3f[2] + 6f[3] - f[4] )/(6dr)
+    # df[1] = ( -3f[1] + 4f[2] - f[3] )/(2dr)
+    # df[2] = ( -2f[1] - 3f[2] + 6f[3] - f[4] )/(6dr)
+    # df[n] = ( -3f[n] + 4f[n-1] - f[n-2] )/(-2dr)
+    # df[n-1] = ( -2f[n] - 3f[n-1] + 6f[n-2] - f[n-3] )/(-6dr) 
 
-    df[n] = ( -3f[n] + 4f[n-1] - f[n-2] )/(-2dr)
-    df[n-1] = ( -2f[n] - 3f[n-1] + 6f[n-2] - f[n-3] )/(-6dr) 
+    df[1] = ( -25f[1] + 48f[2] - 36f[3] + 16f[4] -3f[5] )/(12dr)
+    df[2] = ( -25f[2] + 48f[3] - 36f[4] + 16f[5] -3f[6] )/(12dr)
+    df[n] = ( -25f[n] + 48f[n-1] - 36f[n-2] + 16f[n-3] -3f[n-4] )/(-12dr)
+    df[n-1] = ( -25f[n-1] + 48f[n-2] - 36f[n-3] + 16f[n-4] -3f[n-5] )/(-12dr)
+
 
     return df
 
