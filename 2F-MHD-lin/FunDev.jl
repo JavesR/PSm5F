@@ -1,21 +1,23 @@
 function rdiff1(f::Vector,dr::Float64,n::Int64)
 
-    # return center2(f,dr,n)
-    return center4(f,dr,n)
+    return center2(f,dr,n)
+    # return center4(f,dr,n)
 
 end
 
 
 function rdiff1(f::Matrix,dr::Float64)
 
-    return center4(f,dr)
+    return center2(f,dr)
+    # return center4(f,dr)
 
 end
 
 
 function rdiff2(f::Matrix,dr::Float64)
 
-    return center4_2(f,dr)
+    return center2_2(f,dr)
+    # return center4_2(f,dr)
 
 end
 
@@ -41,6 +43,41 @@ function center2(f::Vector,dr::Float64,n::Int64)
 end
 
 
+function center2(f::Matrix,dr::Float64)
+    
+    df = zeros(eltype(f),size(f))
+
+    for l in 1:size(f,2)
+        for i in 2:size(f,1)-1
+            df[i,l] =  (f[i+1,l]-f[i-1,l])/(2dr)
+        end
+        # 1st bc
+        df[1,l] = (-3f[1,l]+4f[2,l]-f[3,l])/(2dr)
+        df[end,l] = (f[end-2,l]-4f[end-1,l]+3f[end,l])/(2dr)
+    end
+
+    return df
+end
+
+
+function center2_2(f::Matrix,dr::Float64)
+
+    df = zeros(eltype(f),size(f))
+
+    for l in 1:size(f,2)
+        for i in 2:size(f,1)-1
+            df[i,l] =  (f[i+1,l]-2f[i,l]+f[i-1,l])/(dr^2)
+        end
+        # 1st bc
+        df[1,l] = (2f[1,l]-5f[2,l]+4f[3,l]-f[4,l])/(dr^2)
+        df[end,l] = (2f[end,l]-5f[end-1,l]+4f[end-2,l]-f[end-3,l])/(dr^2)
+    end
+
+    return df
+end
+
+
+
 function center4(f::Vector,dr::Float64,n::Int64)
 
     df = zeros(eltype(f),n)
@@ -50,11 +87,11 @@ function center4(f::Vector,dr::Float64,n::Int64)
     end
 
     # 1st bc
-    df[1] = ( -3f[1] + 4f[2] - f[3] )/(2dr)
-    df[2] = ( -2f[1] - 3f[2] + 6f[3] - f[4] )/(6dr)
+    df[1] = ( -25f[1] + 48f[2] - 36f[3] + 16f[4] -3f[5] )/(12dr)
+    df[2] = ( -25f[2] + 48f[3] - 36f[4] + 16f[5] -3f[6] )/(12dr)
+    df[n] = ( -25f[n] + 48f[n-1] - 36f[n-2] + 16f[n-3] -3f[n-4] )/(-12dr)
+    df[n-1] = ( -25f[n-1] + 48f[n-2] - 36f[n-3] + 16f[n-4] -3f[n-5] )/(-12dr)
 
-    df[n] = ( -3f[n] + 4f[n-1] - f[n-2] )/(-2dr)
-    df[n-1] = ( -2f[n] - 3f[n-1] + 6f[n-2] - f[n-3] )/(-6dr) 
 
     # 2nd bc
     # df[1] = ( -f[3] + 8f[2] - 8f[n-1] + f[n-2] )/(12dr)
@@ -78,11 +115,12 @@ function center4(f::Matrix,dr::Float64)
             df[i,l] = ( -f[i+2,l] + 8f[i+1,l] - 8f[i-1,l] + f[i-2,l] )/(12dr)
         
         end
-        df[1,l] = ( -3f[1,l] + 4f[2,l] - f[3,l] )/(2dr)
-        df[2,l] = ( -2f[1,l] - 3f[2,l] + 6f[3,l] - f[4,l] )/(6dr)
 
-        df[end,l] = ( -3f[end,l] + 4f[end-1,l] - f[end-2,l] )/(-2dr)
-        df[end-1,l] = ( -2f[end,l] - 3f[end-1,l] + 6f[end-2,l] - f[end-3,l] )/(-6dr) 
+        df[1,l] = ( -25f[1,l] + 48f[2,l] - 36f[3,l] + 16f[4,l] -3f[5,l] )/(12dr)
+        df[2,l] = ( -25f[2,l] + 48f[3,l] - 36f[4,l] + 16f[5,l] -3f[6,l] )/(12dr)
+        df[end,l] = ( -25f[end,l] + 48f[end-1,l] - 36f[end-2,l] + 16f[end-3,l] -3f[end-4,l] )/(-12dr)
+        df[end-1,l] = ( -25f[end-1,l] + 48f[end-2,l] - 36f[end-3,l] + 16f[end-4,l] -3f[end-5,l] )/(-12dr)
+
     end
 
     return df
@@ -99,11 +137,12 @@ function center4_2(f::Matrix,dr::Float64)
             d2f[i,l] = ( -f[i+2,l] + 16f[i+1,l] -30f[i,l] + 16f[i-1,l] - f[i-2,l] )/(12dr^2)
         end
 
-        d2f[1,l] = ( 2f[1,l] - 5f[2,l] + 4f[3,l] -f[4,l])/(dr^2)
-        d2f[2,l] = ( f[1,l] - 2f[2,l] + f[3,l] )/(dr^2)
-
-        d2f[end,l] = ( 2f[end,l] - 5f[end-1,l] + 4f[end-2,l] - f[end-3,l] )/(dr^2)
-        d2f[end-1,l] = ( f[end,l] - 2f[end-1,l] + f[end-2,l] )/(dr^2) 
+        d2f[1,l] = ( 45f[1,l] - 154f[2,l] + 214f[3,l] -156f[4,l] +61f[5,l] -10f[6,l] )/(12dr^2)
+        d2f[2,l] = ( 45f[2,l] - 154f[3,l] + 214f[4,l] -156f[5,l] +61f[6,l] -10f[7,l] )/(12dr^2)
+        d2f[end,l] = ( 45f[end,l] - 154f[end-1,l] + 214f[end-2,l] -156f[end-3,l] +61f[end-4,l] -10f[end-5,l] )/(12dr^2)
+        d2f[end-1,l] = ( 45f[end-1,l] - 154f[end-2,l] + 214f[end-3,l] -156f[end-4,l] +61f[end-5,l] -10f[end-6,l] )/(12dr^2)
+    
+        
     end
 
     return d2f
@@ -175,7 +214,11 @@ end
 
 
 
+
+
+
 function pus(u::Matrix,rhs::Matrix,dt,vis,dr,ar,
+
     fkm::Matrix,n0bc::Vector,nLbc::Vector,beta::Float64)
 
     v = zeros(eltype(u),size(u))

@@ -130,7 +130,7 @@ function laplace(f::Matrix,fkm::Matrix,dr::Float64,
 
     d2f =  rdiff2(f,dr) .+  rdiff1(f,dr) ./ ar 
 
-    return d2f #.+ f.*fkm.^2
+    return d2f .+ f.*fkm.^2
 
 end
 
@@ -202,30 +202,5 @@ function pus(u::Matrix,rhs::Matrix,dt,vis::Matrix,dr,ar,
     v = tridag(a,b,c,d,nr+1,lmx,n0bc,nLbc)
 
     return v
-
-end
-
-function tridag(a::Matrix,b::Matrix,c::Matrix,d::Matrix,n::Int64,lmx::Int64,
-    n0bc,nLbc)
-
-    u = zeros(ComplexF64,n,lmx)
-    e = zeros(ComplexF64,n,lmx)
-    f = zeros(ComplexF64,n,lmx)
-
-    nr = n-1
-
-    e[nr,:] .= 0.0
-    f[nr,:] = nLbc
-
-    for i in nr-1:-1:1
-        e[i,:] = -a[i+1,:] ./(b[i+1,:] .+c[i+1,:].*e[i+1,:])
-        f[i,:] = (d[i+1,:] .-c[i+1,:].*f[i+1,:])./(b[i+1,:] .+c[i+1,:].*e[i+1,:])
-    end
-
-    for i in 2:n
-        u[i,:] = e[i-1,:].*u[i-1,:] .+ f[i-1,:]
-    end
-
-    return u
 
 end
