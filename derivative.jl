@@ -1,4 +1,3 @@
-
 function tridag1(a,b,c,f,n)
 
     α = zeros(Float64,n)
@@ -6,7 +5,6 @@ function tridag1(a,b,c,f,n)
     γ = zeros(Float64,n)
     x = zeros(Float64,n)
     y = zeros(Float64,n)
-
     
     α[1] = b[1]
     β[1] = c[1]/α[1]
@@ -154,7 +152,7 @@ function center4(f,dr,n)
     df[n] = ( -25f[n] + 48f[n-1] - 36f[n-2] + 16f[n-3] -3f[n-4] )/(-12dr)
     df[n-1] = ( -25f[n-1] + 48f[n-2] - 36f[n-3] + 16f[n-4] -3f[n-5] )/(-12dr)
 
-
+    
     return df
 
 end
